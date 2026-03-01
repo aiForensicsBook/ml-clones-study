@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.env
+data/repos/
+data/submissions_full/
+data/submissions_filtered/
+*.jplag.zip
+*.jar
+.DS_Store
