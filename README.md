@@ -2,7 +2,7 @@
 
 **How Much ML Code Similarity Is Framework-Dictated? Measuring Accidental Clone Prevalence in PyTorch Projects**
 
-Joseph C. Sremack, Resolution Economics
+Joseph C. Sremack
 
 ## Overview
 

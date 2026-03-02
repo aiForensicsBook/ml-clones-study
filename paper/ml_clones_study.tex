@@ -27,6 +27,8 @@
 \usepackage{url}
 \usepackage{listings}
 \usepackage{setspace}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
 
 \onehalfspacing
 
@@ -55,7 +57,6 @@
 Measuring Accidental Clone Prevalence in PyTorch Projects}
 
 \author{Joseph C.\ Sremack\\
-Resolution Economics\\
 \texttt{jsremack@gmail.com}}
 
 \date{}
@@ -65,7 +66,7 @@ Resolution Economics\\
 \begin{abstract}
 Code similarity measurement underpins clone detection, plagiarism identification, and software intellectual property analysis. Machine learning frameworks such as PyTorch impose rigid structural conventions (training loops, model definitions, data loading patterns) that cause independently developed projects to converge on nearly identical code. This framework-driven similarity produces \emph{accidental clones}: detected similarities that reflect shared API constraints rather than copying. Despite growing reliance on code similarity tools in ML software contexts, no empirical study has measured what proportion of ML project code is framework-dictated or how filtering such boilerplate affects measured similarity between independent projects.
 
-We present an empirical study of 15 verified-independent PyTorch projects spanning five ML domains (computer vision, NLP, audio, generative modeling, and other). We develop an AST-based classifier that categorizes every function and class as framework boilerplate, API protocol code, or custom implementation, validated against PyTorch's official documentation and through intra-rater reliability assessment. We apply JPlag clone detection to all pairwise project combinations before and after filtering framework-dictated code, measuring the \emph{filtration effect}, the change in similarity attributable to shared boilerplate. Sensitivity analyses across multiple classification and detection thresholds assess the robustness of findings. This study contributes the first empirical baseline for accidental clone prevalence in ML framework code and a reusable methodology for boilerplate-aware similarity measurement.
+I present an empirical study of 15 verified-independent PyTorch projects spanning five ML domains (computer vision, NLP, audio, generative modeling, and other). I develop an AST-based classifier that categorizes every function and class as framework boilerplate, API protocol code, or custom implementation, validated against PyTorch's official documentation and through intra-rater reliability assessment. I apply JPlag clone detection to all pairwise project combinations before and after filtering framework-dictated code, measuring the \emph{filtration effect}, the change in similarity attributable to shared boilerplate. Sensitivity analyses across multiple classification and detection thresholds assess the robustness of findings. This study contributes the first empirical baseline for accidental clone prevalence in ML framework code and a reusable methodology for boilerplate-aware similarity measurement.
 \end{abstract}
 
 \noindent\textbf{Keywords:} code clones, boilerplate code, machine learning, PyTorch, code similarity, software forensics
@@ -78,9 +79,9 @@ Code similarity measurement is foundational to software engineering research and
 
 This assumption breaks down when independently developed programs share a common framework. Juergens, Deissenboeck, and Hummel~\citep{juergens2010} introduced the concept of \emph{accidental clones}, code similarities arising from shared API constraints rather than copying. In their controlled experiment, 109 students independently implemented the same specification without a shared framework, and clone detection rates were below 1\%. Their finding established an important baseline: when developers work independently without shared structural constraints, detected similarity is negligible.
 
-The landscape of modern software development, however, has shifted dramatically since that baseline was established. Machine learning frameworks such as PyTorch, TensorFlow, and Hugging Face Transformers impose rigid structural conventions on the code that uses them. A PyTorch training loop, for example, follows a mandatory sequence: \texttt{optimizer.zero\_grad()}, forward pass, loss computation, \texttt{loss.backward()}, \texttt{optimizer.step()}, which appears in virtually identical form across every project that trains a neural network. Model definitions must inherit from \texttt{nn.Module} and implement \texttt{\_\_init\_\_} and \texttt{forward} methods. Data loading requires \texttt{Dataset} subclasses with \texttt{\_\_len\_\_} and \texttt{\_\_getitem\_\_}. These are not stylistic choices; they are constraints imposed by the framework's API design.
+The landscape of modern software development, however, has shifted dramatically since that baseline was established. Machine learning frameworks such as PyTorch~\citep{paszke2019}, TensorFlow, and Hugging Face Transformers impose rigid structural conventions on the code that uses them. A PyTorch training loop, for example, follows a mandatory sequence: \texttt{optimizer.zero\_grad()}, forward pass, loss computation, \texttt{loss.backward()}, \texttt{optimizer.step()}, which appears in virtually identical form across every project that trains a neural network. Model definitions must inherit from \texttt{nn.Module} and implement \texttt{\_\_init\_\_} and \texttt{forward} methods. Data loading requires \texttt{Dataset} subclasses with \texttt{\_\_len\_\_} and \texttt{\_\_getitem\_\_}. These are not stylistic choices; they are constraints imposed by the framework's API design.
 
-Recent empirical studies confirm that this structural convergence is pervasive. Sens et al.~\citep{sens2025} analyzed 2,928 ML systems and found that 58\% contain duplicated model implementation files. Nahar et al.~\citep{nahar2025} studied 262 ML products and found shared architectural patterns across independently developed products. Yet neither study measured \emph{how much} of this convergence is framework-dictated versus reflecting genuine design similarity.
+Recent empirical studies confirm that this structural convergence is pervasive. Sens et al.~\citep{sens2025} analyzed 2,928 ML systems and found that 58\% contain duplicated model implementation files. Nahar et al.~\citep{nahar2023} studied 262 ML products and found shared architectural patterns across independently developed products. Yet neither study measured \emph{how much} of this convergence is framework-dictated versus reflecting genuine design similarity.
 
 This gap has practical consequences. Code similarity tools, when applied to ML projects without accounting for framework boilerplate, will report inflated similarity scores between projects that share no meaningful relationship. Ragkhitwetsagul, Krinke, and Clark~\citep{ragkhitwetsagul2018} demonstrated this problem empirically: in their comparison of 30 similarity analysis tools, boilerplate code was an explicit experimental scenario that confounded tool accuracy. They showed that the problem exists but did not measure its magnitude in real ML projects.
 
@@ -93,9 +94,9 @@ Despite this clear gap, no empirical study has measured what proportion of ML fr
 \item[RQ4:] Are these measurements stable across classification thresholds?
 \end{description}
 
-To answer these questions, we present an empirical study of 15 verified-independent PyTorch projects spanning five ML domains: computer vision, natural language processing, audio, generative modeling, and other. We develop an AST-based classifier that categorizes every function, method, and class as one of three types: \emph{framework boilerplate} (code whose structure is dictated by PyTorch's API), \emph{API protocol code} (code that follows framework conventions with domain-specific configuration), or \emph{custom implementation} (code reflecting developer-specific design choices). The classifier is validated against PyTorch's official documentation as ground truth and through an intra-rater reliability assessment.
+To answer these questions, I present an empirical study of 15 verified-independent PyTorch projects spanning five ML domains: computer vision, natural language processing, audio, generative modeling, and other. I develop an AST-based classifier that categorizes every function, method, and class as one of three types: \emph{framework boilerplate} (code whose structure is dictated by PyTorch's API), \emph{API protocol code} (code that follows framework conventions with domain-specific configuration), or \emph{custom implementation} (code reflecting developer-specific design choices). The classifier is validated against PyTorch's official documentation as ground truth and through an intra-rater reliability assessment.
 
-We apply JPlag, a well-established token-based similarity detector~\citep{jplag2000}, to all pairwise project combinations in two conditions: using full project code and using custom-only code after filtering boilerplate. The difference between these two measurements (which we term the \emph{filtration effect}) quantifies how much measured similarity is attributable to shared framework code rather than meaningful design similarity.
+I apply JPlag, a well-established token-based similarity detector~\citep{jplag2000}, to all pairwise project combinations in two conditions: using full project code and using custom-only code after filtering boilerplate. The difference between these two measurements (which I term the \emph{filtration effect}) quantifies how much measured similarity is attributable to shared framework code rather than meaningful design similarity.
 
 This study makes four contributions:
 
@@ -106,7 +107,7 @@ This study makes four contributions:
 \item A replication package including the validated classifier, classification manifests, and all analysis scripts, enabling reproduction and extension to other frameworks.
 \end{enumerate}
 
-The remainder of this paper is organized as follows. Section~\ref{sec:related} reviews related work. Section~\ref{sec:method} describes our study design. Section~\ref{sec:results} presents results. Section~\ref{sec:discussion} discusses findings and implications. Section~\ref{sec:threats} addresses threats to validity. Section~\ref{sec:conclusion} concludes.
+The remainder of this paper is organized as follows. Section~\ref{sec:related} reviews related work. Section~\ref{sec:method} describes my study design. Section~\ref{sec:results} presents results. Section~\ref{sec:discussion} discusses findings and implications. Section~\ref{sec:threats} addresses threats to validity. Section~\ref{sec:conclusion} concludes.
 
 
 % ============================================================
@@ -123,17 +124,17 @@ Clone detection tools vary in their approach and sensitivity. NiCad~\citep{cordy
 
 Not all detected clones represent meaningful copying. Juergens, Deissenboeck, and Hummel~\citep{juergens2010} formalized the concept of \emph{accidental clones}, defined as code similarities that arise from shared API constraints, language idioms, or specification requirements rather than from one developer copying another's code. In their experiment, 109 students independently implemented the same specification without access to each other's code or a shared framework. Clone detection rates were below 1\%, establishing a baseline for similarity that arises from shared task requirements alone.
 
-Kapser and Godfrey~\citep{kapser2008} developed a taxonomy of clone patterns that includes boilerplate clones, API protocol clones, and language idioms, arguing that many clones are unavoidable or even beneficial. Their taxonomy provides the conceptual foundation for our classification scheme: our Category~A (framework boilerplate) corresponds to their boilerplate pattern, Category~B (API protocol) to their API protocol pattern, and Category~C (custom implementation) to code that would not appear as a clone pattern in their taxonomy.
+Kapser and Godfrey~\citep{kapser2008} developed a taxonomy of clone patterns that includes boilerplate clones, API protocol clones, and language idioms, arguing that many clones are unavoidable or even beneficial. Their taxonomy provides the conceptual foundation for my classification scheme: my Category~A (framework boilerplate) corresponds to their boilerplate pattern, Category~B (API protocol) to their API protocol pattern, and Category~C (custom implementation) to code that would not appear as a clone pattern in their taxonomy.
 
-Ragkhitwetsagul, Krinke, and Clark~\citep{ragkhitwetsagul2018} tested 30 code similarity analysis tools across multiple scenarios, including a boilerplate injection scenario. They demonstrated that boilerplate code confounds similarity tools by inflating measured similarity, but they did not measure boilerplate prevalence in real-world ML projects. Our study fills this gap by measuring both prevalence and its effect on similarity scores.
+Ragkhitwetsagul, Krinke, and Clark~\citep{ragkhitwetsagul2018} tested 30 code similarity analysis tools across multiple scenarios, including a boilerplate injection scenario. They demonstrated that boilerplate code confounds similarity tools by inflating measured similarity, but they did not measure boilerplate prevalence in real-world ML projects. My study fills this gap by measuring both prevalence and its effect on similarity scores.
 
 \subsection{ML Software Engineering}
 
-Machine learning software has distinctive characteristics that affect code similarity analysis. Sens et al.~\citep{sens2025} analyzed the structure of 2,928 ML systems, finding that 58\% contain duplicated model implementation files. Their work documents the prevalence of duplication but does not distinguish framework-dictated duplication from meaningful reuse. Nahar et al.~\citep{nahar2025} studied 262 ML products and found that independently developed products converge on shared architectural patterns. This convergence is consistent with the framework effect we hypothesize: when developers use the same ML framework, their code necessarily shares structural patterns.
+Machine learning software has distinctive characteristics that affect code similarity analysis. Sens et al.~\citep{sens2025} analyzed the structure of 2,928 ML systems, finding that 58\% contain duplicated model implementation files. Their work documents the prevalence of duplication but does not distinguish framework-dictated duplication from meaningful reuse. Nahar et al.~\citep{nahar2023} studied 262 ML products and found that independently developed products converge on shared architectural patterns. Dilhara et al.~\citep{dilhara2022} mined 1,000 top-rated Python ML repositories and discovered 28,308 repetitive code change patterns, demonstrating that ML code contains pervasive structural repetition at the change level as well. This convergence is consistent with the framework effect I hypothesize: when developers use the same ML framework, their code necessarily shares structural patterns.
 
 \subsection{Gap}
 
-Prior work establishes that (1)~accidental clones exist and arise from shared constraints, but this was measured without a shared framework~\citep{juergens2010}; (2)~boilerplate and API protocol clones are recognized categories~\citep{kapser2008}, but their prevalence in ML code is unknown; (3)~boilerplate confounds similarity tools~\citep{ragkhitwetsagul2018}, but the magnitude of this confound in ML projects has not been measured; and (4)~ML code exhibits high duplication~\citep{sens2025} and structural convergence~\citep{nahar2025}, but the framework-driven component has not been isolated. Our study provides the first empirical measurement of framework-driven code similarity in ML projects and quantifies the effect of filtering it out.
+Prior work establishes that (1)~accidental clones exist and arise from shared constraints, but this was measured without a shared framework~\citep{juergens2010}; (2)~boilerplate and API protocol clones are recognized categories~\citep{kapser2008}, but their prevalence in ML code is unknown; (3)~boilerplate confounds similarity tools~\citep{ragkhitwetsagul2018}, but the magnitude of this confound in ML projects has not been measured; and (4)~ML code exhibits high duplication~\citep{sens2025}, structural convergence~\citep{nahar2023}, and repetitive code change patterns~\citep{dilhara2022}, but the framework-driven component has not been isolated. My study provides the first empirical measurement of framework-driven code similarity in ML projects and quantifies the effect of filtering it out.
 
 
 % ============================================================
@@ -144,11 +145,20 @@ Figure~\ref{fig:pipeline} provides an overview of the study pipeline. The study 
 
 \begin{figure}[t]
 \centering
-\fbox{\parbox{0.9\textwidth}{\centering
-\textbf{Phase 1: Data Collection} $\rightarrow$ \textbf{Phase 2: AST Classification} $\rightarrow$ \textbf{Phase 3: Similarity Measurement} $\rightarrow$ \textbf{Phase 4: Analysis}\\[4pt]
-\small GitHub mining \quad$\mid$\quad Python \texttt{ast} module \quad$\mid$\quad JPlag pairwise comparisons \quad$\mid$\quad Statistics \& figures\\
-\small 15 projects selected \quad$\mid$\quad JSON manifests \quad$\mid$\quad Full code + filtered code \quad$\mid$\quad Sensitivity analysis
-}}
+\begin{tikzpicture}[
+    phase/.style={draw, rounded corners, fill=blue!8, text width=3.2cm,
+                  minimum height=2.4cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=3mm]}, thick, draw=black!60},
+    label/.style={font=\scriptsize, text=black!70, align=center}
+]
+\node[phase] (p1) {\textbf{Phase 1}\\[2pt]Data Collection\\[4pt]\scriptsize GitHub API mining\\15 projects selected\\Independence verified};
+\node[phase, right=0.5cm of p1] (p2) {\textbf{Phase 2}\\[2pt]AST Classification\\[4pt]\scriptsize Python \texttt{ast} module\\A/B/C categories\\JSON manifests};
+\node[phase, right=0.5cm of p2] (p3) {\textbf{Phase 3}\\[2pt]Similarity\\Measurement\\[4pt]\scriptsize JPlag pairwise\\Full + filtered code};
+\node[phase, right=0.5cm of p3] (p4) {\textbf{Phase 4}\\[2pt]Analysis\\[4pt]\scriptsize Filtration effect\\Sensitivity analysis\\Statistical tests};
+\draw[arr] (p1) -- (p2);
+\draw[arr] (p2) -- (p3);
+\draw[arr] (p3) -- (p4);
+\end{tikzpicture}
 \caption{Overview of the study pipeline.}
 \label{fig:pipeline}
 \end{figure}
@@ -162,7 +172,7 @@ Candidate PyTorch projects were identified using the GitHub Search API. Selectio
 A total of 129 candidates were screened against these criteria. The final dataset comprises 15 projects distributed across five ML domains: 6 computer vision projects, 2 NLP projects, 2 audio projects, 2 generative modeling projects, and 3 other projects.
 
 \subsubsection{Independence Verification.}
-The validity of the study depends on the selected projects being truly independent. For every pair of selected projects, we verified: (1)~no shared contributors, (2)~no fork relationships, (3)~no shared organizational affiliation, (4)~different project creation dates, and (5)~no evidence of seeding from a shared template (via manual inspection of earliest commits). An automated script checked contributor overlap and fork networks via the GitHub API, with manual verification of flagged pairs. The complete independence verification matrix is included in the replication package.
+The validity of the study depends on the selected projects being truly independent. For every pair of selected projects, I verified: (1)~no shared contributors, (2)~no fork relationships, (3)~no shared organizational affiliation, (4)~different project creation dates, and (5)~no evidence of seeding from a shared template (via manual inspection of earliest commits). An automated script checked contributor overlap and fork networks via the GitHub API, with manual verification of flagged pairs. The complete independence verification matrix is included in the replication package.
 
 \subsection{AST-Based Code Classification}
 
@@ -184,16 +194,16 @@ The classifier outputs a JSON manifest for each project containing the classific
 
 Three validation approaches are used, none requiring external participants:
 
-\textbf{Framework Documentation Ground Truth.} For every code unit classified as Category~A, we check whether the pattern appears in PyTorch's official tutorials or examples repository. This provides an objective precision metric: what percentage of Category~A classifications have a documented pattern match?
+\textbf{Framework Documentation Ground Truth.} For every code unit classified as Category~A, I check whether the pattern appears in PyTorch's official tutorials or examples repository. This provides an objective precision metric: what percentage of Category~A classifications have a documented pattern match?
 
-\textbf{Intra-Rater Reliability.} A stratified random sample of 50 code units (16 Category~A, 11 Category~B, 23 Category~C, proportional to the population with oversampling of medium/low-confidence classifications) was manually classified by the author using a detailed codebook (included in the replication package). After a minimum of 14 days, the same 50 code units were re-classified in shuffled order without access to prior labels. Cohen's $\kappa$ between Round~1 and Round~2 measures classification consistency. The target is $\kappa \geq 0.70$ (substantial agreement). This measures consistency, not objectivity, a limitation we acknowledge explicitly.
+\textbf{Intra-Rater Reliability.} A stratified random sample of 50 code units (16 Category~A, 11 Category~B, 23 Category~C, proportional to the population with oversampling of medium/low-confidence classifications) was manually classified by the author using a detailed codebook (included in the replication package). After a washout period, the same 50 code units were re-classified in shuffled order without access to prior labels. Cohen's $\kappa$~\citep{cohen1960} between Round~1 and Round~2 measures classification consistency. The target is $\kappa \geq 0.70$ (substantial agreement per Landis and Koch's~\citep{landis1977} benchmark scale). This measures consistency, not objectivity, a limitation I acknowledge explicitly.
 
 \textbf{Sensitivity Analysis.} The full pipeline is re-run at classification thresholds of 0.50, 0.60, 0.70, 0.80, and 0.90. If core findings are stable across thresholds, the exact classification boundary matters less.
 
 \subsection{Similarity Measurement}
 
 \subsubsection{Tool.}
-We use JPlag v5.1.0~\citep{jplag2000}, a token-based code similarity detector supporting Python~3. JPlag compares all submissions pairwise and reports a similarity percentage for each pair. We chose JPlag for its open-source licensing (Apache 2.0), mature Python support, and established position in the similarity analysis literature. Ragkhitwetsagul et al.~\citep{ragkhitwetsagul2018} compared JPlag with NiCad and 28 other tools, providing published evidence for its capabilities and limitations.
+I use JPlag v5.1.0~\citep{jplag2000,saglam2024}, a token-based code similarity detector supporting Python~3. JPlag compares all submissions pairwise and reports a similarity percentage for each pair. I chose JPlag for its open-source licensing (Apache 2.0), mature Python support, and established position in the similarity analysis literature. Ragkhitwetsagul et al.~\citep{ragkhitwetsagul2018} compared JPlag with NiCad and 28 other tools, providing published evidence for its capabilities and limitations.
 
 \subsubsection{Comparison Design.}
 Two comparisons are performed for each pair of projects:
@@ -307,13 +317,13 @@ Full-code similarity (\%) & 5.34 & 3.88 & 2.60 & 7.38 & 4.78 \\
 Filtered similarity (\%) & 3.23 & 3.07 & 1.73 & 4.48 & 2.75 \\
 Filtration effect (pp) & 2.11 & 1.17 & 0.15 & 3.97 & 3.82 \\
 \midrule
-Within-domain (\%) & 4.67 & & & & \\
-Cross-domain (\%) & 5.55 & & & & \\
+Within-domain (\%) & 5.19 & & & & \\
+Cross-domain (\%) & 5.38 & & & & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\emph{Summary:} The mean pairwise similarity between independent projects using full code was 5.34\%, substantially above the $<$1\% baseline reported by Juergens et al.~\citep{juergens2010} for implementations without a shared framework. Within-domain pairs showed slightly lower similarity (4.67\%) than cross-domain pairs (5.55\%), though this difference was not statistically significant (Mann-Whitney $U = 977.5$, $p = 0.87$, Cliff's $\delta = -0.02$).
+\emph{Summary:} The mean pairwise similarity between independent projects using full code was 5.34\%, substantially above the $<$1\% baseline reported by Juergens et al.~\citep{juergens2010} for implementations without a shared framework. Within-domain pairs showed slightly lower similarity (5.19\%) than cross-domain pairs (5.38\%), though this difference was not statistically significant (Mann-Whitney $U = 901.5$, $p = 0.88$, Cliff's $\delta = 0.02$).
 
 \subsection{RQ3: Filtration Effect}
 
@@ -383,6 +393,18 @@ Threshold & Code Rem.\ (\%) & Mean Full (\%) & Mean Filt.\ (\%) & Effect (pp) & 
 
 \emph{Summary:} The boilerplate proportion (A+B as percentage of code removed) varied by only 6.9 percentage points across the five classification thresholds tested (range: 51.7--58.6\%). The filtration effect was similarly stable, varying by only 0.07 percentage points (range: 2.05--2.12pp). This stability indicates that the core findings are robust to the specific classification threshold chosen.
 
+\subsection{Validation Results}
+
+\subsubsection{Intra-Rater Reliability.}
+The intra-rater validation yielded Cohen's $\kappa = 0.35$ (fair agreement) and linearly weighted $\kappa_w = 0.46$ (moderate agreement) across 50 stratified code units classified in two rounds separated by a washout period. Raw agreement was 58.0\% (29/50).
+
+Agreement varied substantially by category. Category~A (framework boilerplate) achieved 61.1\% agreement (11/18), Category~C (custom implementation) achieved 84.2\% (16/19), but Category~B (API protocol) achieved only 15.4\% (2/13). The dominant disagreement pattern was B$\rightarrow$C reclassification (9 of 21 disagreements): code units classified as API protocol in Round~1 were reclassified as custom implementation in Round~2.
+
+This pattern is interpretable. The B/C boundary is inherently ambiguous: code that follows framework conventions but incorporates domain-specific logic can reasonably be classified either way. Collapsing to a binary scheme (A~vs.\ non-A) yielded $\kappa = 0.54$ (moderate agreement) with 80.0\% raw agreement (40/50), confirming that the boilerplate boundary is substantially more stable than the three-category scheme. The A~vs.\ non-A boundary is more stable because Category~A patterns (training loops, checkpoint save/load, device management) have unambiguous structural signatures. The low overall $\kappa$ thus reflects genuine boundary ambiguity at the B/C boundary rather than arbitrary inconsistency, and it is precisely this ambiguity that motivates the sensitivity analysis.
+
+\subsubsection{Sensitivity as Complementary Validation.}
+The sensitivity analysis (Section~\ref{sec:results}, RQ4) provides the critical complementary evidence. Because the B/C boundary shifts with the classification threshold, and the intra-rater results confirm that this boundary is subjective, the stability of core findings across all five thresholds (filtration effect range: 2.05--2.12pp, coefficient of variation $<$5\%) demonstrates that the study's conclusions do not depend on resolving the B/C ambiguity. Whether borderline code units are classified as B or C, the measured framework effect remains essentially unchanged.
+
 
 % ============================================================
 \section{Discussion}
@@ -396,15 +418,15 @@ The filtration effect (the reduction in measured similarity after removing frame
 
 \subsection{Comparison with Prior Work}
 
-Juergens et al.~\citep{juergens2010} reported $<$1\% clone detection rates for 109 independent implementations of the same specification without a shared framework. Our results show that when a shared framework is introduced, baseline similarity increases to 5.34\%, more than five times higher. This confirms the hypothesis that framework constraints fundamentally change the interpretation of code similarity measurements.
+Juergens et al.~\citep{juergens2010} reported $<$1\% clone detection rates for 109 independent implementations of the same specification without a shared framework. My results show that when a shared framework is introduced, baseline similarity increases to 5.34\%, more than five times higher. This confirms the hypothesis that framework constraints fundamentally change the interpretation of code similarity measurements.
 
-Sens et al.~\citep{sens2025} found 58\% duplication in ML systems. Our measurements suggest that a large portion of this duplication may be framework-dictated rather than representing meaningful code reuse. The 52.7\% boilerplate proportion we measured provides context for interpreting their finding.
+Sens et al.~\citep{sens2025} found 58\% duplication in ML systems. My measurements suggest that a large portion of this duplication may be framework-dictated rather than representing meaningful code reuse. The 52.7\% boilerplate proportion I measured provides context for interpreting their finding.
 
 \subsection{Implications for Practice}
 
 These findings have direct implications for any setting where code similarity scores are used to draw conclusions about ML software:
 
-\emph{Clone detection research.} Studies measuring clone rates in ML code should account for framework boilerplate to avoid inflating reported rates. Our classifier and filtering methodology provide a reusable tool for this purpose.
+\emph{Clone detection research.} Studies measuring clone rates in ML code should account for framework boilerplate to avoid inflating reported rates. My classifier and filtering methodology provide a reusable tool for this purpose.
 
 \emph{Plagiarism detection.} In educational settings where students submit PyTorch assignments, similarity tools will report high baseline scores between independent submissions. Instructors should calibrate expectations against the baselines reported here.
 
@@ -412,7 +434,7 @@ These findings have direct implications for any setting where code similarity sc
 
 \subsection{Limitations of the Filtration Effect}
 
-The filtration effect as measured here is a \emph{lower bound} on the true framework contribution to similarity. Our binary filtering (remove A+B, keep C) may not capture all framework influence; some Category~C code may still be indirectly shaped by framework conventions (e.g., tensor shape conventions that propagate into custom code). Additionally, our Category~B (API protocol) code occupies a gray area: it follows framework patterns but includes domain-specific content.
+The filtration effect as measured here is a \emph{lower bound} on the true framework contribution to similarity. My binary filtering (remove A+B, keep C) may not capture all framework influence; some Category~C code may still be indirectly shaped by framework conventions (e.g., tensor shape conventions that propagate into custom code). Additionally, my Category~B (API protocol) code occupies a gray area: it follows framework patterns but includes domain-specific content.
 
 
 % ============================================================
@@ -421,30 +443,30 @@ The filtration effect as measured here is a \emph{lower bound} on the true frame
 
 \subsection{Construct Validity}
 
-The primary construct validity concern is the accuracy of the AST-based classifier. The three-category classification scheme necessarily involves boundary cases, particularly for \texttt{nn.Module} subclasses that contain both framework-dictated structure and custom logic. We address this through: (1)~validation against PyTorch documentation as objective ground truth, (2)~a detailed codebook with explicit boundary-case rules, and (3)~sensitivity analysis showing that findings are stable across thresholds.
+The primary construct validity concern is the accuracy of the AST-based classifier. The three-category classification scheme necessarily involves boundary cases, particularly for \texttt{nn.Module} subclasses that contain both framework-dictated structure and custom logic. Intra-rater reliability was below the target ($\kappa = 0.35$), with disagreements concentrated at the Category~B/C boundary (9 of 21 disagreements were B$\rightarrow$C reclassifications). I address this through: (1)~validation against PyTorch documentation as objective ground truth, (2)~a detailed codebook with explicit boundary-case rules, and (3)~sensitivity analysis showing that findings are stable across all five classification thresholds despite the B/C boundary ambiguity.
 
-The choice of JPlag (token-based) over NiCad (AST-based) for similarity measurement means our results capture syntactic rather than structural similarity. Token-based comparison is arguably more conservative, which would make positive findings about accidental clones more robust. However, results may differ with AST-based tools, and we identify cross-tool comparison as future work.
+The choice of JPlag (token-based) over NiCad (AST-based) for similarity measurement means my results capture syntactic rather than structural similarity. Token-based comparison is arguably more conservative, which would make positive findings about accidental clones more robust. However, results may differ with AST-based tools, and I identify cross-tool comparison as future work.
 
 \subsection{Internal Validity}
 
-The study uses a solo-researcher validation design. Intra-rater reliability measures classification consistency but not objectivity; the same systematic bias could affect both rounds. A multi-rater validation study with independent software engineers would strengthen construct validity. We plan this as a follow-up study and acknowledge it as an explicit limitation.
+The study uses a solo-researcher validation design. The intra-rater $\kappa$ of 0.35 fell below the 0.70 target, indicating that the three-category classification scheme has limited reproducibility at the B/C boundary. However, the weighted $\kappa$ of 0.46 (moderate agreement) reflects that most disagreements were between adjacent categories rather than between A and C. More importantly, the sensitivity analysis demonstrates that the core findings are invariant to where the B/C boundary falls. A multi-rater validation study with independent software engineers would strengthen construct validity and is planned as future work.
 
 \subsection{External Validity}
 
-Our study examines a single framework (PyTorch) in a single language (Python) across a limited number of projects (15). While PyTorch is the most widely used ML research framework, results may not generalize to TensorFlow, JAX, or frameworks in other languages. The specific project selection criteria (500--5{,}000 LOC, $\leq$3 contributors, 30+ commits) target a particular project profile; larger or more complex projects may exhibit different boilerplate proportions.
+My study examines a single framework (PyTorch) in a single language (Python) across a limited number of projects (15). While PyTorch is the most widely used ML research framework, results may not generalize to TensorFlow, JAX, or frameworks in other languages. The specific project selection criteria (500--5{,}000 LOC, $\leq$3 contributors, 30+ commits) target a particular project profile; larger or more complex projects may exhibit different boilerplate proportions.
 
-We focus on five ML domains (computer vision, NLP, audio, generative modeling, and other). Additional domains (reinforcement learning, graph neural networks) may have different framework usage patterns.
+I focus on five ML domains (computer vision, NLP, audio, generative modeling, and other). Additional domains (reinforcement learning, graph neural networks) may have different framework usage patterns.
 
 \subsection{Conclusion Validity}
 
-The small sample size (15 projects, 105 pairwise comparisons) limits statistical power. We use non-parametric tests appropriate for small samples and report effect sizes alongside $p$-values. Bootstrap confidence intervals provide uncertainty quantification. We frame this as an initial measurement study; larger replications are future work.
+The small sample size (15 projects, 105 pairwise comparisons) limits statistical power. I use non-parametric tests appropriate for small samples and report effect sizes alongside $p$-values. Bootstrap confidence intervals provide uncertainty quantification. I frame this as an initial measurement study; larger replications are future work.
 
 
 % ============================================================
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
 
-This paper presents the first empirical measurement of framework-driven code similarity in ML software. Across 15 independent PyTorch projects, we found that 52.7\% of code units are classifiable as framework boilerplate or API protocol code, leaving only 47.3\% as custom implementation. Filtering framework code reduced measured pairwise similarity by 2.11 percentage points (39.5\% relative reduction), demonstrating that a substantial portion of detected similarity between independent ML projects is an artifact of shared framework constraints rather than meaningful design similarity. These findings were stable across five classification thresholds (filtration effect range: 0.07 percentage points).
+This paper presents the first empirical measurement of framework-driven code similarity in ML software. Across 15 independent PyTorch projects, I found that 52.7\% of code units are classifiable as framework boilerplate or API protocol code, leaving only 47.3\% as custom implementation. Filtering framework code reduced measured pairwise similarity by 2.11 percentage points (39.5\% relative reduction), demonstrating that a substantial portion of detected similarity between independent ML projects is an artifact of shared framework constraints rather than meaningful design similarity. These findings were stable across five classification thresholds (filtration effect range: 0.07 percentage points).
 
 These baselines have immediate practical value for clone detection research, plagiarism detection in educational settings, and forensic software analysis involving ML code. A similarity score between two PyTorch projects that falls within the framework-driven range documented here should not be interpreted as evidence of copying.
 
@@ -484,10 +506,10 @@ Kapser, C.J. \& Godfrey, M.W. (2008).
 \newblock ``{Cloning Considered Harmful}'' considered harmful: Patterns of cloning in software.
 \newblock \emph{Empirical Software Engineering}, 13(6), 645--692.
 
-\bibitem[Nahar et~al.(2025)]{nahar2025}
-Nahar, N., et~al. (2025).
-\newblock A meta-summary of challenges in building products with {ML} components.
-\newblock In \emph{Proc.\ 47th Int.\ Conf.\ on Software Engineering (ICSE)}.
+\bibitem[Nahar et~al.(2023)]{nahar2023}
+Nahar, N., Zhang, H., Lewis, G., Zhou, S., \& K\"{a}stner, C. (2023).
+\newblock A meta-summary of challenges in building products with {ML} components -- collecting experiences from 4758+ practitioners.
+\newblock In \emph{Proc.\ 2nd Int.\ Conf.\ on AI Engineering (CAIN)}, pp.\ 171--183.
 
 \bibitem[Prechelt et~al.(2000)]{jplag2000}
 Prechelt, L., Malpohl, G., \& Philippsen, M. (2000).
@@ -518,6 +540,31 @@ Sens, Y., et~al. (2025).
 Svajlenko, J. \& Roy, C.K. (2015).
 \newblock Evaluating clone detection tools with {BigCloneBench}.
 \newblock In \emph{Proc.\ Int.\ Conf.\ on Software Maintenance and Evolution (ICSME)}, pp.\ 131--140.
+
+\bibitem[Cohen(1960)]{cohen1960}
+Cohen, J. (1960).
+\newblock A coefficient of agreement for nominal scales.
+\newblock \emph{Educational and Psychological Measurement}, 20(1), 37--46.
+
+\bibitem[Dilhara et~al.(2022)]{dilhara2022}
+Dilhara, M., Ketkar, A., Sannidhi, N., \& Dig, D. (2022).
+\newblock Discovering repetitive code changes in {Python} {ML} systems.
+\newblock In \emph{Proc.\ 44th Int.\ Conf.\ on Software Engineering (ICSE)}, pp.\ 736--748.
+
+\bibitem[Landis \& Koch(1977)]{landis1977}
+Landis, J.R. \& Koch, G.G. (1977).
+\newblock The measurement of observer agreement for categorical data.
+\newblock \emph{Biometrics}, 33(1), 159--174.
+
+\bibitem[Paszke et~al.(2019)]{paszke2019}
+Paszke, A., et~al. (2019).
+\newblock {PyTorch}: An imperative style, high-performance deep learning library.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 32, 8024--8035.
+
+\bibitem[S\u{a}glam et~al.(2024)]{saglam2024}
+S\u{a}glam, T., Br\"{o}del, M., Schmid, L., \& Hahner, S. (2024).
+\newblock Obfuscation-resilient software plagiarism detection with {JPlag}.
+\newblock In \emph{Proc.\ 46th Int.\ Conf.\ on Software Engineering: Companion (ICSE Companion)}, pp.\ 240--244.
 
 \end{thebibliography}
 

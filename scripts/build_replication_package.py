@@ -12,7 +12,7 @@ README_CONTENT = """# Replication Package
 **Paper:** "How Much ML Code Similarity Is Framework-Dictated?
 Measuring Accidental Clone Prevalence in PyTorch Projects"
 
-**Author:** Joseph C. Sremack, Resolution Economics
+**Author:** Joseph C. Sremack
 
 **Venue:** Submitted to Empirical Software Engineering (EMSE)
 
@@ -142,7 +142,7 @@ If you use this replication package, please cite:
 }}
 ```
 
-Joseph C. Sremack — Resolution Economics
+Joseph C. Sremack
 
 Copyright (c) {year} Joseph C. Sremack
 
