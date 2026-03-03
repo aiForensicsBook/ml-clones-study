@@ -3,16 +3,14 @@
 % Measuring Accidental Clone Prevalence in PyTorch Projects
 %
 % For submission to Empirical Software Engineering (EMSE)
-% Uses article class; swap to svjour3 for final Springer submission
 % ============================================================
 
-\documentclass[11pt,a4paper]{article}
+\documentclass[smallextended,natbib]{svjour3}
+\smartqed
 
 % --- Packages ---
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage[margin=2.5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{tabularx}
@@ -21,16 +19,10 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{float}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{natbib}
 \usepackage{url}
 \usepackage{listings}
-\usepackage{setspace}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning}
-
-\onehalfspacing
 
 \hypersetup{
     colorlinks=true,
@@ -50,26 +42,34 @@
 % --- Placeholder command for future data ---
 \newcommand{\placeholder}[1]{\textbf{[#1]}}
 
+\journalname{Empirical Software Engineering}
+
 % ============================================================
 \begin{document}
 
-\title{How Much ML Code Similarity Is Framework-Dictated?\\
-Measuring Accidental Clone Prevalence in PyTorch Projects}
+\title{How Much ML Code Similarity Is Framework-Dictated?
+\thanks{Replication package: \url{https://github.com/aiForensicsBook/ml-clones-study}}}
+\subtitle{Measuring Accidental Clone Prevalence in PyTorch Projects}
 
-\author{Joseph C.\ Sremack\\
-\texttt{jsremack@gmail.com}}
+\titlerunning{Framework-Dictated ML Code Similarity}
 
-\date{}
+\author{Joseph C.\ Sremack}
+
+\authorrunning{J.\ C.\ Sremack}
+
+\institute{J.\ C.\ Sremack \at
+              \email{jsremack@gmail.com}}
+
+\date{Received: date / Accepted: date}
+
 \maketitle
 
-% ============================================================
 \begin{abstract}
 Code similarity measurement underpins clone detection, plagiarism identification, and software intellectual property analysis. Machine learning frameworks such as PyTorch impose rigid structural conventions (training loops, model definitions, data loading patterns) that cause independently developed projects to converge on nearly identical code. This framework-driven similarity produces \emph{accidental clones}: detected similarities that reflect shared API constraints rather than copying. Despite growing reliance on code similarity tools in ML software contexts, no empirical study has measured what proportion of ML project code is framework-dictated or how filtering such boilerplate affects measured similarity between independent projects.
 
 I present an empirical study of 15 verified-independent PyTorch projects spanning five ML domains (computer vision, NLP, audio, generative modeling, and other). I develop an AST-based classifier that categorizes every function and class as framework boilerplate, API protocol code, or custom implementation, validated against PyTorch's official documentation and through intra-rater reliability assessment. I apply JPlag clone detection to all pairwise project combinations before and after filtering framework-dictated code, measuring the \emph{filtration effect}, the change in similarity attributable to shared boilerplate. Sensitivity analyses across multiple classification and detection thresholds assess the robustness of findings. This study contributes the first empirical baseline for accidental clone prevalence in ML framework code and a reusable methodology for boilerplate-aware similarity measurement.
+\keywords{Code clones \and Boilerplate code \and Machine learning \and PyTorch \and Code similarity \and Software forensics}
 \end{abstract}
-
-\noindent\textbf{Keywords:} code clones, boilerplate code, machine learning, PyTorch, code similarity, software forensics
 
 % ============================================================
 \section{Introduction}
@@ -422,6 +422,24 @@ Juergens et al.~\citep{juergens2010} reported $<$1\% clone detection rates for 1
 
 Sens et al.~\citep{sens2025} found 58\% duplication in ML systems. My measurements suggest that a large portion of this duplication may be framework-dictated rather than representing meaningful code reuse. The 52.7\% boilerplate proportion I measured provides context for interpreting their finding.
 
+Dilhara et al.~\citep{dilhara2022} discovered 28,308 repetitive code change patterns across 1,000 Python ML repositories, demonstrating that structural repetition pervades ML code not only at the static level but at the change level as well. My results suggest a possible mechanism: if 52.7\% of code units are framework-dictated, then a substantial fraction of code changes will also be framework-dictated (e.g., updating a training loop when migrating PyTorch versions, or modifying a \texttt{Dataset} subclass interface). The boilerplate prevalence I measure may thus partially explain the repetitive change patterns they observed.
+
+\subsection{Why Within-Domain and Cross-Domain Similarity Are Similar}
+
+A counterintuitive finding is that within-domain pairs (5.19\% mean similarity) and cross-domain pairs (5.38\%) show nearly identical baseline similarity ($p = 0.88$, Cliff's $\delta = 0.02$). One might expect that projects in the same ML domain (e.g., two computer vision projects) would share more code than projects in different domains (e.g., a vision project and an audio project), since they are more likely to use similar model architectures, loss functions, and data preprocessing pipelines.
+
+The data suggest that the framework effect dominates domain-specific effects. PyTorch's core API patterns---training loops, module definitions, optimizer configuration, checkpoint management---are shared across all domains. These universal patterns account for the bulk of detected similarity. Domain-specific code (e.g., convolutional architectures in vision, attention mechanisms in NLP) falls predominantly into Category~C (custom implementation), which is filtered out when computing baseline similarity but contributes relatively little to full-code similarity because it is structurally diverse even within a domain. This pattern holds across all three JPlag thresholds: at the sensitive threshold ($t=5$), within-domain pairs average 31.36\% versus 34.18\% for cross-domain; at the strict threshold ($t=25$), 0.22\% versus 0.11\%. The absence of a domain effect at any threshold strengthens the interpretation that framework conformity, not domain similarity, drives detected resemblance.
+
+\subsection{Characteristics of High-Filtration Pairs}
+
+The filtration effect varied substantially across pairs, ranging from $-2.98$ to $+8.94$ percentage points. Examining the pairs with the largest filtration effects reveals what drives them. The top five pairs (Diffusion-Distillation-WL/pytorch-examples, BenchmarkTransferLearning/chatterbox-finetuning, ANTsTorch/Diffusion-Distillation-WL, ANTsTorch/chatterbox-finetuning, and chatterbox-finetuning/pytorch-examples) all involve at least one project with a high boilerplate proportion: Diffusion-Distillation-WL (68.7\% A+B), chatterbox-finetuning (66.6\%), and pytorch-examples (64.0\%). The average combined boilerplate proportion for the top five pairs ranges from 56.8\% to 66.3\%.
+
+The correlation between average boilerplate proportion and filtration effect is moderate ($r = 0.39$), indicating that boilerplate prevalence is an important but not sole predictor. Other factors include how much the boilerplate code specifically overlaps between two projects (two projects may both have high boilerplate but use different boilerplate patterns) and the relative size of the custom codebases after filtering.
+
+Of the 105 pairs, 40 (38.1\%) showed a relative reduction exceeding 50\%, meaning that more than half of their detected similarity was attributable to framework code. Sixteen pairs exceeded 10\% full-code similarity, a threshold that might trigger concern in a plagiarism or forensic context. After filtering, zero pairs remained above 10\%. This illustrates the practical stakes: without boilerplate filtering, a forensic analyst reviewing these projects might flag 16 pairs as warranting investigation, when the framework-aware analysis eliminates all of them.
+
+Negative filtration effects (where filtered similarity exceeds full-code similarity) occurred in 25 pairs (23.8\%). This happens when removing boilerplate code makes the remaining custom code proportionally more similar---a statistical artifact of denominator reduction rather than evidence that boilerplate filtering increases true similarity. These negative cases are generally small in magnitude (median $-1.04$ pp).
+
 \subsection{Implications for Practice}
 
 These findings have direct implications for any setting where code similarity scores are used to draw conclusions about ML software:
@@ -431,6 +449,8 @@ These findings have direct implications for any setting where code similarity sc
 \emph{Plagiarism detection.} In educational settings where students submit PyTorch assignments, similarity tools will report high baseline scores between independent submissions. Instructors should calibrate expectations against the baselines reported here.
 
 \emph{Forensic software analysis.} In intellectual property disputes involving ML software, similarity scores must be interpreted in light of the framework effect. A similarity score that falls within the range of framework-driven coincidence documented here is qualitatively different from one that exceeds it.
+
+\emph{Tool development.} Clone detection and plagiarism detection tools that operate on ML code could incorporate framework-awareness directly. A practical approach would be to ship framework-specific boilerplate profiles (for PyTorch, TensorFlow, etc.) that allow tools to either exclude boilerplate matches or report framework-adjusted similarity scores alongside raw scores. The AST-based classifier developed in this study demonstrates one such approach; a lighter-weight alternative could use pattern matching on import statements and API calls without full AST parsing. The stability of findings across classification thresholds (Section~\ref{sec:results}, RQ4) suggests that even an approximate boilerplate filter would substantially improve the interpretability of similarity scores for ML code.
 
 \subsection{Limitations of the Filtration Effect}
 
@@ -482,7 +502,7 @@ All data, code, and analysis scripts are available at \url{https://github.com/ai
 % ============================================================
 % References
 % ============================================================
-\bibliographystyle{plainnat}
+\bibliographystyle{spbasic}
 
 \begin{thebibliography}{99}
 
