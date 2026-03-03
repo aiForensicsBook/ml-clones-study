@@ -1,0 +1,16 @@
+project_name,repo_url,domain
+ANTsTorch,https://github.com/ANTsX/ANTsTorch,CV
+BenchmarkTransferLearning,https://github.com/MR-HosseinzadehTaher/BenchmarkTransferLearning,CV
+Diffusion-Distillation-WL,https://github.com/LucaGeminiani00/Diffusion-Distillation-WL,Generative
+Pytorch-Img-Classification-Trainer-V2,https://github.com/AidinHamedi/Pytorch-Img-Classification-Trainer-V2,CV
+TaxaDiffusion,https://github.com/aminK8/TaxaDiffusion,Generative
+chatterbox-finetuning,https://github.com/gokhaneraslan/chatterbox-finetuning,NLP
+cino,https://github.com/iflytek/cino,NLP
+flucoma-torch,https://github.com/jorshi/flucoma-torch,Audio
+gflownet-peptide,https://github.com/ewijaya/gflownet-peptide,Other
+lane-detection-unet-ncnn,https://github.com/nick8592/lane-detection-unet-ncnn,CV
+midv-500-models,https://github.com/ternaus/midv-500-models,CV
+pytorch-examples,https://github.com/haowei01/pytorch-examples,Other
+torchebm,https://github.com/soran-ghaderi/torchebm,Other
+tracknet-series-pytorch,https://github.com/AnInsomniacy/tracknet-series-pytorch,CV
+vall-e,https://github.com/KuchikiRenji/vall-e,Audio
