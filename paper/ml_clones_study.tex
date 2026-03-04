@@ -58,7 +58,7 @@
 \authorrunning{J.\ C.\ Sremack}
 
 \institute{J.\ C.\ Sremack \at
-              \email{jsremack@gmail.com}}
+              \email{joe.sremack@cbiz.com}}
 
 \date{Received: date / Accepted: date}
 
@@ -231,6 +231,8 @@ Descriptive statistics (mean, median, IQR) are reported for all distributions. M
 
 \subsection{Dataset Description}
 
+Table~\ref{tab:demographics} summarizes the 15 selected projects. The dataset spans five ML domains and ranges from 497 to 23,742 lines of code, totaling 88,032 LOC across 583 files and 3,488 classifiable code units.
+
 \begin{table}[t]
 \centering
 \caption{Project demographics.}
@@ -295,12 +297,12 @@ VALL-E & 22 & 19.1 & 15 & 13.0 & 78 & 67.8 \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/fig1_classification_by_domain.pdf}
+\includegraphics[width=0.85\textwidth]{fig1_classification_by_domain.pdf}
 \caption{Classification distribution by ML domain. Cat~A (framework boilerplate) and Cat~B (API protocol) together account for the majority of code units in most domains.}
 \label{fig:classification_domain}
 \end{figure}
 
-\emph{Summary:} Across 15 projects, 31.4\% of code units were classified as Category~A (framework boilerplate), 21.2\% as Category~B (API protocol), and 47.3\% as Category~C (custom implementation). By lines of code, the proportions were 37.3\%, 18.4\%, and 44.3\% respectively. Combined, framework-dictated code (A+B) accounted for 52.7\% of all code units (55.7\% by LOC), meaning that only 47.3\% of code units in a typical PyTorch project represent custom developer work.
+\emph{Summary:} Table~\ref{tab:classification} and Figure~\ref{fig:classification_domain} present the classification results. Across 15 projects, 31.4\% of code units were classified as Category~A (framework boilerplate), 21.2\% as Category~B (API protocol), and 47.3\% as Category~C (custom implementation). By lines of code, the proportions were 37.3\%, 18.4\%, and 44.3\% respectively. Combined, framework-dictated code (A+B) accounted for 52.7\% of all code units (55.7\% by LOC), meaning that only 47.3\% of code units in a typical PyTorch project represent custom developer work.
 
 \subsection{RQ2: Baseline Similarity}
 
@@ -323,7 +325,7 @@ Cross-domain (\%) & 5.38 & & & & \\
 \end{tabular}
 \end{table}
 
-\emph{Summary:} The mean pairwise similarity between independent projects using full code was 5.34\%, substantially above the $<$1\% baseline reported by Juergens et al.~\citep{juergens2010} for implementations without a shared framework. Within-domain pairs showed slightly lower similarity (5.19\%) than cross-domain pairs (5.38\%), though this difference was not statistically significant (Mann-Whitney $U = 901.5$, $p = 0.88$, Cliff's $\delta = 0.02$).
+\emph{Summary:} Table~\ref{tab:similarity} summarizes the pairwise similarity distributions. The mean pairwise similarity between independent projects using full code was 5.34\%, substantially above the $<$1\% baseline reported by Juergens et al.~\citep{juergens2010} for implementations without a shared framework. Within-domain pairs showed slightly lower similarity (5.19\%) than cross-domain pairs (5.38\%), though this difference was not statistically significant (Mann-Whitney $U = 901.5$, $p = 0.88$, Cliff's $\delta = 0.02$).
 
 \subsection{RQ3: Filtration Effect}
 
@@ -357,18 +359,18 @@ LaneDet-UNet & TrackNet & 9.87 & 3.07 & 6.81 & 69.0 \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/fig2_boxplot_filtration.pdf}
+\includegraphics[width=0.7\textwidth]{fig2_boxplot_filtration.pdf}
 \caption{Distribution of pairwise similarity before (full code) and after (filtered, Category~C only) removing framework-dictated code. Red diamonds indicate means.}
 \label{fig:boxplot_filtration}
 \end{figure}
 
-\emph{Summary:} Filtering framework boilerplate reduced mean pairwise similarity from 5.34\% to 3.23\%, a reduction of 2.11 percentage points (39.5\% relative reduction). The filtration effect was statistically significant (Wilcoxon signed-rank $W = 914$, $p < 0.001$, Cliff's $\delta = 0.33$), with 76.2\% of pairs showing a positive filtration effect. This demonstrates that a substantial portion of measured similarity between independent PyTorch projects is attributable to shared framework code rather than meaningful design similarity.
+\emph{Summary:} Table~\ref{tab:filtration} lists the top 15 pairs by filtration effect and Figure~\ref{fig:boxplot_filtration} visualizes the distributions. Filtering framework boilerplate reduced mean pairwise similarity from 5.34\% to 3.23\%, a reduction of 2.11 percentage points (39.5\% relative reduction). The filtration effect was statistically significant (Wilcoxon signed-rank $W = 914$, $p < 0.001$, Cliff's $\delta = 0.33$), with 76.2\% of pairs showing a positive filtration effect. This demonstrates that a substantial portion of measured similarity between independent PyTorch projects is attributable to shared framework code rather than meaningful design similarity.
 
 \subsection{RQ4: Sensitivity Analysis}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/fig3_sensitivity.pdf}
+\includegraphics[width=\textwidth]{fig3_sensitivity.pdf}
 \caption{Sensitivity of key metrics to classification threshold. (a)~Percentage of code removed. (b)~Mean filtration effect in percentage points. (c)~Percentage of pairs with positive filtration effect. All metrics are stable across the 0.50--0.90 range.}
 \label{fig:sensitivity}
 \end{figure}
@@ -391,7 +393,7 @@ Threshold & Code Rem.\ (\%) & Mean Full (\%) & Mean Filt.\ (\%) & Effect (pp) & 
 \end{tabular}
 \end{table}
 
-\emph{Summary:} The boilerplate proportion (A+B as percentage of code removed) varied by only 6.9 percentage points across the five classification thresholds tested (range: 51.7--58.6\%). The filtration effect was similarly stable, varying by only 0.07 percentage points (range: 2.05--2.12pp). This stability indicates that the core findings are robust to the specific classification threshold chosen.
+\emph{Summary:} Figure~\ref{fig:sensitivity} and Table~\ref{tab:sensitivity} present the sensitivity results. The boilerplate proportion (A+B as percentage of code removed) varied by only 6.9 percentage points across the five classification thresholds tested (range: 51.7--58.6\%). The filtration effect was similarly stable, varying by only 0.07 percentage points (range: 2.05--2.12pp). This stability indicates that the core findings are robust to the specific classification threshold chosen.
 
 \subsection{Validation Results}
 
@@ -497,6 +499,31 @@ Several directions for extension are planned. First, expanding to TensorFlow and
 \subsection{Replication Package}
 
 All data, code, and analysis scripts are available at \url{https://github.com/aiForensicsBook/ml-clones-study}. The package includes: the AST classifier source code, classification manifests for all projects, the intra-rater validation data and codebook, JPlag configuration and results, sensitivity analysis notebooks, and pre-generated tables and figures.
+
+
+% ============================================================
+\section*{Declarations}
+
+\subsection*{Funding}
+No funding was received for this research.
+
+\subsection*{Ethical Approval}
+Not applicable.
+
+\subsection*{Informed Consent}
+Not applicable.
+
+\subsection*{Author Contributions}
+J.\ C.\ Sremack is the sole author and was responsible for all aspects of this work, including study design, data collection, analysis, and writing.
+
+\subsection*{Data Availability Statement}
+All data, code, and analysis scripts are available in the replication package at \url{https://github.com/aiForensicsBook/ml-clones-study}. All repositories used in this study are publicly available on GitHub.
+
+\subsection*{Conflict of Interest}
+The author declares no conflict of interest.
+
+\subsection*{Clinical Trial Number}
+Clinical trial number: not applicable.
 
 
 % ============================================================
